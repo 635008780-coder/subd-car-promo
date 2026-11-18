@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>FORM 宣传片时间轴 · seek(t)</title>
+<style>
+  :root { --bg:#11171a; --s2:#1b2327; --line:#2a3438; --text:#e5e7e2; --muted:#869296; --accent:#d18d5f; --soft:#e8b28a; --cage:#e07a3c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); overflow: hidden; }
+  body { width: 1920px; height: 1080px; font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  /* 画面区:字幕条以上。浏览器窗口、示意动画、包装文字都只在这里,字幕永远不压画面 */
+  #view { position: absolute; left: 0; top: 0; width: 1920px; height: 948px; overflow: hidden; background:
+    radial-gradient(1300px 760px at 82% 8%, rgba(209,141,95,.17), transparent 62%),
+    radial-gradient(900px 600px at 4% 100%, rgba(232,178,138,.07), transparent 60%),
+    linear-gradient(rgba(159,175,177,.045) 1px, transparent 1px) 0 0 / 100% 54px,
+    linear-gradient(90deg, rgba(159,175,177,.045) 1px, transparent 1px) 0 0 / 54px 100%, var(--bg); }
+  .layer { position: absolute; left: 0; top: 0; width: 1920px; height: 948px; }
+  #band { position: absolute; left: 0; top: 948px; width: 1920px; height: 132px; background: #0b1012; border-top: 1px solid #222c30; }
+  #cap { position: absolute; left: 96px; top: 0; width: 1728px; height: 108px; display: flex; align-items: center; justify-content: center; white-space: nowrap; font-weight: 700; font-size: 44px; letter-spacing: .05em; color: #f3f4f0; }
+  #captxt b { font-weight: 900; color: var(--soft); }
+  #bgclip { transform-origin: 50% 50%; }
+  #scrim { background: radial-gradient(1200px 640px at 50% 50%, rgba(8,11,13,.42), rgba(8,11,13,.84)); }
+  svg path, svg polyline, svg line, svg circle, svg polygon, svg rect { vector-effect: non-scaling-stroke; }
+  svg text { font-family: "Noto Sans CJK SC", "Noto Sans SC", sans-serif; }
+  #cam { transform-origin: 0 0; will-change: transform, filter; }
+  #win { position: absolute; left: 171px; top: 10px; width: 1578px; border-radius: 16px; overflow: hidden; background: #151c20; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 12px 30px rgba(0,0,0,.35); }
+  #bar { position: relative; height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: var(--s2); border-bottom: 1px solid #293237; }
+  #bar i { width: 11px; height: 11px; border-radius: 50%; background: #3b474c; }
+  #url { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); display: flex; align-items: center; gap: 9px; height: 28px; min-width: 460px; padding: 0 18px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); color: #d6dad5; font: 500 15px/1 Inter, "Noto Sans CJK SC", sans-serif; letter-spacing: .01em; }
+  #shot { display: block; width: 1578px; height: 888px; background: #12191e; }
+  #big { position: absolute; left: 960px; top: 400px; white-space: nowrap; font-weight: 900; line-height: 1; letter-spacing: .02em; text-shadow: 0 12px 70px rgba(0,0,0,.6); transform-origin: 50% 50%; will-change: transform, filter, opacity; }
+  #big em, #end em, #exp em { font-style: normal; color: var(--soft); }
+  #sticker { position: absolute; left: 56px; top: 44px; display: flex; align-items: center; gap: 14px; padding: 10px 24px 13px 17px; border-radius: 12px; background: rgba(9,13,15,.86); border: 1px solid rgba(255,255,255,.11); box-shadow: 0 14px 40px rgba(0,0,0,.45); font-weight: 700; font-size: 34px; line-height: 1.1; transform-origin: 0 50%; }
+  #sticker b { width: 7px; height: 34px; border-radius: 4px; background: var(--accent); }
+  /* 数值气泡:贴在被拖动的滑块上方,只盖住面板里上一行,不挡三维模型 */
+  #bubble { position: absolute; left: 0; top: 0; padding: 8px 22px 10px; border-radius: 14px; background: rgba(13,18,21,.96); border: 2px solid var(--accent); box-shadow: 0 16px 44px rgba(0,0,0,.55); text-align: center; white-space: nowrap; transform-origin: 50% 100%; }
+  #bubble::after { content: ""; position: absolute; left: 50%; bottom: -11px; width: 18px; height: 18px; margin-left: -9px; background: rgba(13,18,21,.96); border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(45deg); }
+  #bl { font-weight: 500; font-size: 23px; color: var(--soft); }
+  #bv { font: 700 52px/1.08 Inter, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  #bv small { margin-left: 8px; font: 500 24px/1 Inter, sans-serif; color: var(--muted); }
+  #tag { position: absolute; left: 56px; top: 792px; padding: 11px 26px 14px; border-radius: 14px; background: rgba(9,13,15,.88); border: 1px solid rgba(255,255,255,.11); box-shadow: 0 14px 40px rgba(0,0,0,.45); transform-origin: 0 100%; }
+  #tag small { display: block; font: 700 18px/1 "Liberation Mono", monospace; letter-spacing: .14em; color: var(--accent); }
+  #tag span { display: flex; align-items: center; gap: 16px; margin-top: 7px; font-weight: 900; font-size: 54px; line-height: 1.1; }
+  #tagdot { width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); }
+  #exp { position: absolute; left: 56px; top: 150px; padding: 22px 32px 26px; border-radius: 20px; background: rgba(9,13,15,.9); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 26px 70px rgba(0,0,0,.55); transform-origin: 0 50%; }
+  #exp h2 { margin: 0; font-weight: 900; font-size: 76px; line-height: 1.1; white-space: nowrap; }
+  #expfile { margin-top: 14px; font: 700 24px/1.2 "Liberation Mono", monospace; color: var(--soft); }
+  #exptoast { margin-top: 6px; font-weight: 500; font-size: 25px; color: var(--muted); }
+  #end { position: absolute; left: 0; top: 590px; width: 1920px; text-align: center; }
+  #end h1 { margin: 0; font-weight: 900; font-size: 118px; line-height: 1.1; letter-spacing: .02em; transform-origin: 50% 50%; }
+  #endrow { margin-top: 16px; display: flex; justify-content: center; align-items: center; gap: 28px; }
+  #endurl { padding: 12px 32px 15px; border-radius: 999px; background: var(--accent); color: #11171a; font: 700 44px/1 Inter, sans-serif; letter-spacing: .005em; }
+  #endsmall { font-weight: 500; font-size: 34px; color: var(--text); }
+  /* 按下去的包装动效:贴着被按元素的一圈亮框,按下时向内收,松开后向外扩散(叠在录屏上面,不改动界面本身) */
+  #press { position: absolute; left: 0; top: 0; border: 4px solid #fff; box-shadow: 0 0 0 2px rgba(232,178,138,.95), 0 0 36px rgba(232,178,138,.8), inset 0 0 26px rgba(255,255,255,.22); pointer-events: none; }
+  /* 氛围层:两团缓慢漂移的柔光 + 暗角(只在示意段出现);线稿带一圈柔和辉光 */
+  #amb1, #amb2 { position: absolute; border-radius: 50%; pointer-events: none; will-change: transform; }
+  #amb1 { left: 1020px; top: -330px; width: 1100px; height: 860px; background: radial-gradient(closest-side, rgba(209,141,95,.24), transparent); }
+  #amb2 { left: -330px; top: 430px; width: 980px; height: 800px; background: radial-gradient(closest-side, rgba(96,134,146,.2), transparent); }
+  #vig { background: radial-gradient(1500px 820px at 50% 46%, transparent 52%, rgba(4,6,7,.6) 100%); pointer-events: none; }
+  #art, #a3s { filter: drop-shadow(0 0 7px rgba(224,122,60,.5)); }
+  #a4s { filter: drop-shadow(0 0 4px rgba(224,122,60,.26)); }
+  #bigline { position: absolute; left: 960px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, transparent, #e8b28a 30%, #fff 50%, #e8b28a 70%, transparent); }
+  #flash { background: #fff; opacity: 0; pointer-events: none; }
+  .head { position: absolute; left: 230px; top: 92px; font: 700 22px/1 "Liberation Mono", "Noto Sans CJK SC", monospace; letter-spacing: .2em; color: var(--accent); }
+  .head span { margin-left: 18px; color: var(--muted); letter-spacing: .1em; }
+  /* A2 痛点示意 */
+  #a2 { transform-origin: 30% 50%; }
+  #a2 .cell { position: absolute; height: 124px; border-radius: 12px; border: 2px solid var(--accent); background: rgba(209,141,95,.2); transform-origin: 0 50%; }
+  #a2 .cell.late { border-color: var(--cage); background: repeating-linear-gradient(135deg, rgba(224,122,60,.38) 0 14px, rgba(224,122,60,.14) 14px 28px); }
+  .lab { position: absolute; white-space: nowrap; font-weight: 900; font-size: 96px; line-height: 1; transform-origin: 0 50%; }
+  .lab em { font-style: normal; color: var(--soft); }
+  #stamp { position: absolute; left: 1060px; top: 196px; padding: 12px 34px 18px; border: 7px solid #e0623c; border-radius: 16px; color: #e0623c; font-weight: 900; font-size: 84px; line-height: 1.1; white-space: nowrap; transform-origin: 50% 50%; background: rgba(17,23,26,.6); }
+  #sweep { position: absolute; top: 528px; width: 6px; height: 148px; border-radius: 3px; background: #fff; box-shadow: 0 0 26px rgba(255,255,255,.8); }
+  #brace { position: absolute; top: 704px; height: 16px; border: 3px solid var(--cage); border-top: 0; border-radius: 0 0 12px 12px; }
+  /* A3 重复的前期活儿 */
+  #a3t { position: absolute; left: 230px; top: 138px; display: flex; align-items: center; gap: 26px; font-weight: 900; font-size: 92px; line-height: 1; white-space: nowrap; transform-origin: 0 50%; }
+  #a3t em { font-style: normal; color: var(--soft); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="view">
+    <div id="amb1"></div><div id="amb2"></div>
+    <canvas id="bgclip" class="layer" width="1920" height="948"></canvas>
+    <canvas id="intro" class="layer" width="1920" height="948" style="position:absolute;left:0;top:0;width:1920px;height:948px"></canvas>
+    <div id="scrim" class="layer"></div>
+    <svg id="art" class="layer" viewBox="0 0 1920 948" fill="none"></svg>
+    <div id="a2" class="layer">
+      <div class="head" id="a2head">前期方案 · SubD 建模周期<span>示意</span></div>
+      <div class="cell" id="c0" style="left:230px;top:232px;width:150px"></div>
+      <div class="lab" id="l1" style="left:430px;top:246px">最快：<em>1 天/版</em></div>
+      <div id="stamp">只能撑一两次</div>
+      <div id="bar5"></div>
+      <div id="sweep"></div>
+      <div id="brace"></div>
+      <div class="lab" id="l2" style="left:1084px;top:554px">正常：<em>3–5 天</em></div>
+    </div>
+    <div id="a3" class="layer">
+      <div class="head" id="a3head">前期方案 · 每一版都要重来<span>示意</span></div>
+      <svg id="a3s" class="layer" viewBox="0 0 1920 948" fill="none"></svg>
+      <div id="a3t"><svg id="a3loop" width="96" height="96" viewBox="-48 -48 96 96" fill="none"><path d="M30 -16 A34 34 0 1 0 34 6" stroke="#e8b28a" stroke-width="9" stroke-linecap="round"/><path d="M14 -30 L33 -17 L38 -40" stroke="#e8b28a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg><span><em>重复</em>的前期活儿</span></div>
+    </div>
+    <div id="a4" class="layer"><svg id="a4s" class="layer" viewBox="0 0 1920 948" fill="none"></svg></div>
+    <div id="cam" class="layer">
+      <div id="win">
+        <div id="bar"><i></i><i></i><i></i>
+          <div id="url">
+            <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5.5" width="9" height="6.5" rx="1.6" fill="#869296"/><path d="M3 5.5V4a2.5 2.5 0 0 1 5 0v1.5" stroke="#869296" stroke-width="1.4"/></svg>
+            <span id="urltxt"></span>
+          </div>
+        </div>
+        <canvas id="shot" width="1440" height="810"></canvas>
+      </div>
+    </div>
+    <div id="ov" class="layer">
+      <div id="press"></div>
+      <div id="bigline"></div>
+      <div id="big"></div>
+      <div id="sticker"><b></b><span id="stickertxt"></span></div>
+      <div id="bubble"><div id="bl"></div><div id="bv"></div></div>
+      <div id="tag"><small id="tagn"></small><span><i id="tagdot"></i><b id="tagt" style="font-weight:900"></b></span></div>
+      <div id="exp"><h2>直接导入 <em>Alias</em> / <em>犀牛</em></h2><div id="expfile"></div><div id="exptoast"></div></div>
+      <div id="end"><h1 id="endh">一键导出 <em>SubD</em></h1><div id="endrow"><div id="endurl">form-cc-studio.netlify.app</div><div id="endsmall">现在免费 · 浏览器本地运行</div></div></div>
+    </div>
+    <div id="vig" class="layer"></div>
+    <div id="flash" class="layer"></div>
+  </div>
+  <div id="band"><div id="cap"><span id="captxt"></span></div></div>
+</div>
+<script src="intro.bundle.js"></script>
+<script>
+// 按时间取帧:seek(t) 把整页设置成 t 秒时的画面,返回后即可截图。没有任何依赖真实时间的动画。
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, u) => a + (b - a) * u;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eOutExpo = (u) => (u >= 1 ? 1 : 1 - Math.pow(2, -10 * u));
+const eOutCubic = (u) => 1 - Math.pow(1 - u, 3);
+const eInOut = (u) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
+const eOutBack = (u) => 1 + 2.70158 * Math.pow(u - 1, 3) + 1.70158 * Math.pow(u - 1, 2);
+const URLTXT = 'form-cc-studio.netlify.app';
+const VW = 1920, VH = 948; // 画面区
+const WIN = { x: 171, y: 10, w: 1578, bar: 40, h: 888 };
+const K = WIN.w / 1440; // 页面 CSS 像素 → 舞台像素
+const S0 = VW / WIN.w; // 这个缩放下,页面宽度正好铺满画面
+const NS = 'http://www.w3.org/2000/svg';
+let CFG = null;
+const cache = new Map();
+const HIDE = ['intro', 'bgclip', 'scrim', 'art', 'a2', 'a3', 'a4', 'cam', 'press', 'bigline', 'big', 'sticker', 'bubble', 'tag', 'exp', 'end'];
+const show = (el) => { el.style.display = ''; return el; };
+const hideAll = () => { for (const id of HIDE) $(id).style.display = 'none'; $('flash').style.opacity = '0'; };
+const mk = (tag, attrs, parent) => { const el = document.createElementNS(NS, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); parent.appendChild(el); return el; };
+const pstr = (pts) => pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+
+async function frameImg(clip, f) {
+  const key = clip + ':' + f;
+  let img = cache.get(key);
+  if (!img) {
+    img = new Image();
+    img.src = CFG.framesBase + clip + '/' + String(f).padStart(5, '0') + '.jpg';
+    await img.decode();
+    cache.set(key, img);
+    if (cache.size > 8) cache.delete(cache.keys().next().value);
+  }
+  return img;
+}
+async function drawShot(clip, f) {
+  const img = await frameImg(clip, f);
+  const cv = $('shot');
+  if (cv.width !== img.width) { cv.width = img.width; cv.height = img.height; }
+  cv.getContext('2d').drawImage(img, 0, 0); // 原始分辨率入画,只在最终合成时缩放一次
+}
+
+/* ---------- 镜头:窗口要么盖住画面区,要么居中 ---------- */
+function camTransform(s, fx = 720, fy = 405) {
+  const X = WIN.x + fx * K, Y = WIN.y + WIN.bar + fy * K;
+  let tx = VW / 2 - s * X, ty = VH / 2 - s * Y;
+  const w = WIN.w * s, h = (WIN.h + WIN.bar) * s;
+  const left = WIN.x * s + tx, top = WIN.y * s + ty;
+  tx += (w >= VW ? clamp(left, VW - w, 0) : (VW - w) / 2) - left;
+  ty += (h >= VH ? clamp(top, VH - h, 0) : (VH - h) / 2) - top;
+  return { s, tx, ty };
+}
+function applyCam(c, blur = 0, opacity = 1) {
+  const el = show($('cam'));
+  el.style.transform = `translate(${c.tx.toFixed(2)}px, ${c.ty.toFixed(2)}px) scale(${c.s.toFixed(5)})`;
+  el.style.filter = blur > 0.35 ? `blur(${blur.toFixed(2)}px)` : 'none';
+  el.style.opacity = String(opacity);
+}
+// 根据真实光标轨迹推拉:在参数面板里操作时略推近并靠右,在视口里拖拽时回到整页。前后各看 0.67 秒,镜头会提前起步。
+// 逐帧取样 + 三角窗加权:缩放和位置都连续变化,不会出现隔几帧跳一下的台阶
+function autoCam(rows, f, z, biasY) {
+  let sz = 0, sx = 0, sy = 0, n = 0;
+  for (let d = -70; d <= 70; d++) { // 第五版:前后各看约 1.2 秒(原来 0.7 秒),镜头跟得更慢更稳
+    const r = rows[clamp(f + d, 0, rows.length - 1)];
+    const w = 1 - Math.abs(d) / 71;
+    sz += w * (r[0] > 1086 ? z[2] : r[2] ? z[1] : z[0]);
+    sx += w * clamp(r[0], 250, 1300);
+    sy += w * clamp(r[1], 150, 700);
+    n += w;
+  }
+  return { s: sz / n, fx: sx / n, fy: sy / n + biasY };
+}
+// 关键帧镜头:相邻两个关键帧之间用缓入缓出过渡
+function keyCam(keys, x) {
+  if (x <= keys[0].t) return keys[0];
+  for (let i = 1; i < keys.length; i++) {
+    if (x <= keys[i].t) {
+      const a = keys[i - 1], b = keys[i];
+      const u = eInOut(seg(x, a.t, b.t));
+      return { s: lerp(a.s, b.s, u), fx: lerp(a.fx, b.fx, u), fy: lerp(a.fy, b.fy, u) };
+    }
+  }
+  return keys[keys.length - 1];
+}
+// 按压曲线:按下时很快到 1,松开后带一点回弹地回到 0
+function pressBump(u, hold) {
+  if (u < 0) return 0;
+  return eOutCubic(seg(u, 0, 0.06)) * (1 - eOutBack(seg(u, hold + 0.02, hold + 0.42)));
+}
+function url(p) {
+  const n = Math.round(clamp(p) * URLTXT.length);
+  $('urltxt').textContent = URLTXT.slice(0, n) + (p > 0 && p < 1 ? '|' : '');
+}
+function flash(o) { $('flash').style.opacity = String(clamp(o)); }
+
+/* ---------- 包装元素 ---------- */
+function setBig(html, size, y) {
+  const el = show($('big'));
+  if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  el.style.fontSize = size + 'px';
+  el.style.top = y + 'px';
+  return el;
+}
+function bigText(html, size, y, u, dur) {
+  // 精修后的大字入场:自下而上浮起、字距由松到紧、模糊衰减,下方一道光线横向展开;离场时向上淡出
+  const el = setBig(html, size, y);
+  const a = eOutExpo(seg(u, 0, 0.5));
+  const out = eInOut(seg(u, dur - 0.16, dur));
+  el.style.opacity = String(clamp(a * 1.5) * (1 - out));
+  el.style.letterSpacing = (0.02 + 0.1 * (1 - a)).toFixed(3) + 'em';
+  el.style.transform = `translate(-50%, -50%) translate(0, ${((1 - a) * 46 - out * 30).toFixed(1)}px) scale(${(1 + 0.035 * seg(u, 0, dur)).toFixed(4)})`;
+  const blur = (1 - a) * 16 + out * 10;
+  el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none';
+  const ln = show($('bigline')), w = size * 2.4 * eOutCubic(seg(u, 0.1, 0.75));
+  ln.style.width = w.toFixed(0) + 'px'; ln.style.marginLeft = (-w / 2).toFixed(0) + 'px';
+  ln.style.top = (y + size * 0.74) + 'px'; ln.style.opacity = String(0.9 * seg(u, 0.1, 0.3) * (1 - out));
+}
+function slam(el, age, origin) {
+  const a = eOutExpo(seg(age, 0, 0.42));
+  el.style.opacity = String(clamp(a * 1.5));
+  el.style.transform = `translate(0, ${((1 - a) * 18).toFixed(1)}px) scale(${(1.1 - 0.1 * a).toFixed(3)})`;
+  el.style.filter = a < 0.985 ? `blur(${((1 - a) * 10).toFixed(1)}px)` : 'none';
+  if (origin) el.style.transformOrigin = origin;
+}
+function sticker(text, age) {
+  if (!text || age < 0) return;
+  const el = show($('sticker'));
+  $('stickertxt').textContent = text;
+  const a = eOutExpo(seg(age, 0, 0.3));
+  el.style.opacity = String(clamp(a * 1.6));
+  el.style.transform = `translate(${((1 - a) * -46).toFixed(1)}px, 0) scale(${(1.28 - 0.28 * a).toFixed(3)})`;
+  el.style.filter = a < 0.985 ? `blur(${((1 - a) * 11).toFixed(1)}px)` : 'none';
+}
+// 数值气泡:参数名、数值、单位都来自录制时逐帧读回的真实输入框
+function bubble(rows, f, c) {
+  const b = rows[f] && rows[f][3];
+  if (!b) return;
+  let a = f, z = f;
+  while (a > 0 && rows[a - 1][3] && rows[a - 1][3].l === b.l) a--;
+  while (z < rows.length - 1 && rows[z + 1][3] && rows[z + 1][3].l === b.l) z++;
+  const inn = eOutBack(seg((f - a) / 60, 0, 0.24));
+  const out = seg((z - f) / 60, 0, 0.1);
+  let fresh = 0;
+  for (let i = 1; i <= 8 && f - i >= a; i++) if (rows[f - i][3].v !== b.v) { fresh = 1 - (i - 1) / 8; break; }
+  const el = show($('bubble'));
+  $('bl').textContent = b.l;
+  $('bv').innerHTML = `${b.v}<small>${b.u}</small>`;
+  $('bv').style.color = `rgb(${Math.round(lerp(255, 232, fresh))}, ${Math.round(lerp(255, 178, fresh))}, ${Math.round(lerp(255, 138, fresh))})`;
+  const ax = c.tx + c.s * (WIN.x + 1263 * K);
+  const ay = c.ty + c.s * (WIN.y + WIN.bar + (b.y - 22) * K);
+  el.style.transform = `translate(${ax.toFixed(1)}px, ${Math.max(150, ay).toFixed(1)}px) translate(-50%, -100%) scale(${(0.55 + 0.45 * inn + 0.05 * fresh).toFixed(3)})`;
+  el.style.opacity = String(clamp(inn * 1.4) * out);
+}
+// 左下角名称牌:当前基础方案 / 当前车身颜色(名称是录制时从页面读回的)
+function tag(shot, L) {
+  const tg = shot.tag;
+  if (!tg || L.clip !== tg.clip) return;
+  const ev = tg.events.filter((e) => e.f <= L.f).pop();
+  const name = ev ? ev.name : tg.first;
+  if (!name) return;
+  const el = show($('tag'));
+  $('tagn').textContent = tg.order ? `${tg.title} ${tg.order.indexOf(name) + 1} / ${tg.order.length}` : tg.title;
+  $('tagt').textContent = name;
+  const dot = $('tagdot');
+  if (tg.colors && tg.colors[name]) { dot.style.display = ''; dot.style.background = tg.colors[name]; } else dot.style.display = 'none';
+  slam(el, ev ? (L.f - ev.f) / 60 : L.lf / 60, '0 100%');
+}
+function caption(t) {
+  const el = $('cap');
+  const cue = CFG.captions.find((c) => t >= c.start && t < c.end);
+  if (!cue) { el.style.opacity = '0'; return; }
+  const span = $('captxt');
+  if (span.dataset.h !== cue.html) { span.innerHTML = cue.html; span.dataset.h = cue.html; }
+  const a = eOutCubic(seg(t, cue.start, cue.start + 0.12));
+  el.style.opacity = String(a);
+  el.style.transform = `translate(0, ${((1 - a) * 12).toFixed(1)}px)`;
+}
+
+/* ---------- A1 的两张示意画:Alias 风格曲线 + 四边面控制笼(通用三厢轮廓,不对应任何品牌) ---------- */
+const TOP = [[40, 300], [58, 238], [170, 214], [330, 203], [470, 197], [640, 98], [780, 80], [930, 82], [1110, 110], [1280, 186], [1420, 204], [1458, 250], [1462, 300]];
+const BASE = 'L1462 330 L1264 330 A104 104 0 0 0 1056 330 L424 330 A104 104 0 0 0 216 330 L40 330';
+const ART = { ox: 210, oy: 470 };
+function spline(pts, per = 18) {
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    for (let k = 0; k < per; k++) {
+      const u = k / per, u2 = u * u, u3 = u2 * u;
+      out.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * u + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * u2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * u3)));
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+const SPL = spline(TOP);
+const SPLD = 'M' + SPL.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L');
+const A1 = {}, QG = {};
+function buildArt() {
+  const svg = $('art');
+  const g1 = (A1.g = mk('g', { transform: `translate(${ART.ox} ${ART.oy})` }, svg));
+  A1.hull = mk('polyline', { points: TOP.map((p) => p.join(',')).join(' '), stroke: '#869296', 'stroke-width': 1.5, 'stroke-dasharray': '7 9', opacity: 0.7 }, g1);
+  A1.comb = [];
+  for (let i = 2; i < SPL.length - 2; i += 2) {
+    const a = SPL[i - 2], b = SPL[i], c = SPL[i + 2];
+    const tx = c[0] - a[0], ty = c[1] - a[1], tl = Math.hypot(tx, ty) || 1;
+    const cx = a[0] - 2 * b[0] + c[0], cy = a[1] - 2 * b[1] + c[1];
+    const curv = (tx * cy - ty * cx) / (tl * tl * tl);
+    const len = clamp(Math.abs(curv) * 9000, 6, 120) * (curv > 0 ? 1 : -1);
+    const nx = -ty / tl, ny = tx / tl;
+    A1.comb.push({ u: i / SPL.length, el: mk('line', { x1: b[0], y1: b[1], x2: b[0] - nx * len, y2: b[1] - ny * len, stroke: '#e07a3c', 'stroke-width': 1.3, opacity: 0 }, g1) });
+  }
+  A1.curve = mk('path', { d: SPLD, stroke: '#e8b28a', 'stroke-width': 4.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g1);
+  A1.len = A1.curve.getTotalLength();
+  A1.curve.setAttribute('stroke-dasharray', A1.len + ' ' + A1.len);
+  A1.base = mk('path', { d: 'M1462 300 ' + BASE + ' L40 300', stroke: '#d18d5f', 'stroke-width': 3, 'stroke-linecap': 'round' }, g1);
+  A1.baseLen = A1.base.getTotalLength();
+  A1.base.setAttribute('stroke-dasharray', A1.baseLen + ' ' + A1.baseLen);
+  A1.wheels = [320, 1160].map((cx) => mk('circle', { cx, cy: 336, r: 84, stroke: '#d18d5f', 'stroke-width': 3, 'stroke-dasharray': '528 528' }, g1));
+  A1.cvs = TOP.map((p) => mk('rect', { x: p[0] - 7, y: p[1] - 7, width: 14, height: 14, fill: '#11171a', stroke: '#ffb37a', 'stroke-width': 2.5, opacity: 0 }, g1));
+  A1.pen = mk('circle', { r: 9, fill: '#fff', opacity: 0 }, g1);
+  const g2 = (QG.g = mk('g', { transform: `translate(${ART.ox} ${ART.oy})` }, svg));
+  const yTop = (x) => { for (let i = 1; i < SPL.length; i++) if (SPL[i][0] >= x) { const a = SPL[i - 1], b = SPL[i]; return lerp(a[1], b[1], clamp((x - a[0]) / ((b[0] - a[0]) || 1))); } return 300; };
+  const yBot = (x) => { for (const cx of [320, 1160]) if (Math.abs(x - cx) < 104) return 330 - Math.sqrt(104 * 104 - (x - cx) * (x - cx)); return 330; };
+  const NU = 26, NV = 5, V = [];
+  for (let i = 0; i <= NU; i++) { const x = lerp(46, 1456, i / NU); V.push(Array.from({ length: NV + 1 }, (_, j) => [x, lerp(yBot(x), yTop(x), Math.pow(j / NV, 0.9))])); }
+  QG.quads = [];
+  for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) QG.quads.push({ t: (i + (NV - j) * 1.5) * 0.026, el: mk('polygon', { points: pstr([V[i][j], V[i + 1][j], V[i + 1][j + 1], V[i][j + 1]]), stroke: '#e07a3c', 'stroke-width': 2, fill: 'rgba(224,122,60,0.07)', opacity: 0 }, g2) });
+  QG.dots = [];
+  for (let i = 0; i <= NU; i++) for (let j = 0; j <= NV; j++) QG.dots.push({ t: (i + (NV - j) * 1.5) * 0.026, el: mk('circle', { cx: V[i][j][0], cy: V[i][j][1], r: 4, fill: '#ffb37a', opacity: 0 }, g2) });
+}
+function drawArt1(u) {
+  show($('art')); A1.g.style.display = ''; QG.g.style.display = 'none';
+  const p = eInOut(seg(u, 0.1, 1.0));
+  A1.curve.setAttribute('stroke-dashoffset', String(A1.len * (1 - p)));
+  const pt = A1.curve.getPointAtLength(A1.len * p);
+  A1.pen.setAttribute('cx', pt.x); A1.pen.setAttribute('cy', pt.y); A1.pen.setAttribute('opacity', p > 0 && p < 1 ? 0.95 : 0);
+  A1.hull.setAttribute('opacity', String(0.7 * seg(u, 0, 0.25)));
+  A1.cvs.forEach((el, i) => el.setAttribute('opacity', String(seg(u, 0.02 + i * 0.022, 0.1 + i * 0.022))));
+  for (const c of A1.comb) c.el.setAttribute('opacity', String(0.75 * seg(p, c.u, c.u + 0.05)));
+  const q = eInOut(seg(u, 0.55, 1.25));
+  A1.base.setAttribute('stroke-dashoffset', String(A1.baseLen * (1 - q)));
+  A1.wheels.forEach((el) => el.setAttribute('stroke-dashoffset', String(528 * (1 - q))));
+  A1.g.setAttribute('opacity', '0.8');
+}
+function drawArt2(u) {
+  show($('art')); QG.g.style.display = ''; A1.g.style.display = 'none';
+  for (const q of QG.quads) q.el.setAttribute('opacity', String(eOutCubic(seg(u, q.t, q.t + 0.12)) * 0.9));
+  for (const d of QG.dots) { const a = seg(u, d.t, d.t + 0.08); d.el.setAttribute('opacity', String(a)); d.el.setAttribute('r', String(4 + 5 * (1 - a) * (a > 0 ? 1 : 0))); }
+  QG.g.setAttribute('opacity', '0.85');
+}
+
+/* ---------- A2 痛点示意:只用给定的两个数字,节点对准口播 ---------- */
+const BAR = { x: 230, y: 540, w: 150, gap: 12 };
+function buildA2() {
+  BAR.cells = [];
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'cell' + (i >= 3 ? ' late' : '');
+    el.style.cssText = `left:${BAR.x + i * (BAR.w + BAR.gap)}px;top:${BAR.y}px;width:${BAR.w}px`;
+    $('bar5').appendChild(el);
+    BAR.cells.push(el);
+  }
+}
+function drawA2(lt, dur, cue) {
+  show($('a2'));
+  const [, c1, c2, c3] = cue;
+  // "做 SubD 建模":背景里一台车的控制笼一格格长出来;数字出现后退成水印
+  drawArt2(lt * 0.42);
+  QG.g.setAttribute('opacity', String(lerp(0.55, 0.13, seg(lt, c1 - 0.25, c1 + 0.35))));
+  $('a2').style.transform = `scale(${(1 + 0.02 * seg(lt, 0, dur)).toFixed(4)})`;
+  $('a2head').style.opacity = String(seg(lt, 0.05, 0.4));
+  const a = eOutBack(seg(lt, c1 - 0.05, c1 + 0.3));
+  $('c0').style.transform = `scale(${a.toFixed(3)})`; $('c0').style.opacity = String(clamp(a * 1.5));
+  slam($('l1'), lt - (c1 + 0.12), '0 50%');
+  const st = $('stamp'), ts = c2 + 0.05;
+  const s = eOutExpo(seg(lt, ts, ts + 0.28));
+  st.style.opacity = lt >= ts ? String(clamp(s * 2)) : '0';
+  st.style.transform = `rotate(-7deg) scale(${(2.6 - 1.6 * s).toFixed(3)})`;
+  st.style.filter = s < 0.98 ? `blur(${((1 - s) * 14).toFixed(1)}px)` : 'none';
+  const shake = lt >= ts + 0.2 && lt < ts + 0.6 ? Math.sin((lt - ts - 0.2) * 80) * 7 * (1 - seg(lt, ts + 0.2, ts + 0.6)) : 0;
+  $('c0').style.marginLeft = shake.toFixed(1) + 'px';
+  if (lt >= ts + 0.2 && lt < ts + 0.32) flash(0.14 * (1 - seg(lt, ts + 0.2, ts + 0.32)));
+  // 时间条:先长到 3 格,再长到 5 格
+  const grow = [0, 1, 2].map((i) => seg(lt, c3 + i * 0.2, c3 + 0.25 + i * 0.2)).concat([0, 1].map((i) => seg(lt, c3 + 0.95 + i * 0.25, c3 + 1.2 + i * 0.25)));
+  BAR.cells.forEach((el, i) => { const g = eOutBack(grow[i]); el.style.transform = `scaleX(${clamp(g, 0, 1.2).toFixed(3)})`; el.style.opacity = String(clamp(grow[i] * 2)); });
+  const br = $('brace');
+  br.style.left = BAR.x + 2 * (BAR.w + BAR.gap) + 'px'; br.style.width = (3 * BAR.w + 2 * BAR.gap) * eOutCubic(seg(lt, c3 + 1.35, c3 + 1.7)) + 'px'; br.style.opacity = String(seg(lt, c3 + 1.35, c3 + 1.5));
+  slam($('l2'), lt - (c3 + 0.45), '0 50%');
+  const sw = $('sweep'), t0 = c3 + 1.75;
+  if (lt > t0) {
+    const total = 5 * BAR.w + 4 * BAR.gap;
+    const ph = ((lt - t0) / 1.25) % 1;
+    sw.style.display = ''; sw.style.left = BAR.x + total * eInOut(ph) + 'px'; sw.style.opacity = String(Math.sin(Math.PI * ph) * 0.9);
+    const idx = Math.min(4, Math.floor(eInOut(ph) * 5));
+    BAR.cells.forEach((el, i) => { el.style.filter = i === idx ? 'brightness(1.6)' : 'none'; });
+  } else { sw.style.display = 'none'; BAR.cells.forEach((el) => { el.style.filter = 'none'; }); }
+}
+
+/* ---------- A3 重复的前期活儿:定尺寸(尺寸线一遍遍量)、抓趋势(曲线一遍遍调)。不出现任何数字 ---------- */
+const A3 = {};
+function buildA3() {
+  const svg = $('a3s');
+  const g = (A3.g = mk('g', {}, svg)); // 会左右伸缩的车身和尺寸线
+  A3.body = mk('path', { d: SPLD + ' ' + BASE + ' Z', stroke: '#7d9096', 'stroke-width': 3, fill: 'rgba(134,146,150,0.07)', 'stroke-linejoin': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, g);
+  A3.wheels = [320, 1160].map((cx) => mk('circle', { cx, cy: 336, r: 84, stroke: '#62757b', 'stroke-width': 2.5 }, g));
+  const dim = (d) => mk('path', { d, stroke: '#e8b28a', 'stroke-width': 3, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, g);
+  A3.dims = [
+    dim('M40 352 L40 552 M1462 352 L1462 552 M40 540 L1462 540 M40 540 L62 528 M40 540 L62 552 M1462 540 L1440 528 M1462 540 L1440 552'),
+    dim('M320 438 L320 462 M1160 438 L1160 462 M320 450 L1160 450 M320 450 L342 438 M320 450 L342 462 M1160 450 L1138 438 M1160 450 L1138 462'),
+    dim('M-44 80 L-20 80 M-44 420 L-20 420 M-32 80 L-32 420 M-32 80 L-44 102 M-32 80 L-20 102 M-32 420 L-44 398 M-32 420 L-20 398'),
+  ];
+  A3.roof = mk('path', { d: SPLD, stroke: '#e07a3c', 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, g);
+  A3.hull = mk('polyline', { stroke: '#869296', 'stroke-width': 1.5, 'stroke-dasharray': '7 9' }, g);
+  A3.belt = mk('path', { stroke: '#e8b28a', 'stroke-width': 6, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1' }, g);
+  A3.cvs = [0, 1, 2, 3].map(() => mk('rect', { width: 16, height: 16, fill: '#11171a', stroke: '#ffb37a', 'stroke-width': 2.5 }, g));
+  const l = (A3.lab = mk('g', {}, svg)); // 文字不跟着伸缩
+  const text = (x, y, s, anchor = 'middle') => { const el = mk('text', { x, y, 'text-anchor': anchor, 'font-size': 50, 'font-weight': 900, fill: '#e8b28a' }, l); el.textContent = s; return el; };
+  A3.texts = [text(751, 612, '车长'), text(740, 510, '轴距'), text(-58, 268, '车高', 'end')];
+  A3.trend = text(1290, 150, '趋势', 'start');
+  A3.trend.setAttribute('fill', '#e07a3c');
+}
+function drawA3(lt, dur, cue) {
+  show($('a3'));
+  const [, c1, c2, c3] = cue;
+  $('a3head').style.opacity = String(seg(lt, 0.05, 0.4));
+  const sx = 1 + 0.035 * Math.sin((lt - c2) * 2.9) * seg(lt, c2 + 0.7, c2 + 1.1); // 车长一会儿长一会儿短:尺寸在反复改
+  A3.g.setAttribute('transform', `translate(960 318) scale(${(0.78 * sx).toFixed(4)} 0.78) translate(-751 0)`);
+  A3.lab.setAttribute('transform', 'translate(960 318) scale(0.78) translate(-751 0)');
+  // 开头:轮廓一笔描出来,车轮跟着出现
+  const draw = eInOut(seg(lt, 0.1, 1.25));
+  A3.body.setAttribute('stroke-dashoffset', String(1 - draw));
+  A3.body.setAttribute('fill-opacity', String(seg(lt, 1.0, 1.5)));
+  A3.wheels.forEach((el, i) => el.setAttribute('opacity', String(seg(lt, 0.7 + i * 0.25, 1.0 + i * 0.25))));
+  slam($('a3t'), lt - c1, '0 50%');
+  $('a3loop').style.transform = `rotate(${(lt * 210).toFixed(1)}deg)`;
+  A3.dims.forEach((el, i) => {
+    const p = eOutCubic(seg(lt, c2 + i * 0.2, c2 + 0.5 + i * 0.2));
+    el.setAttribute('stroke-dashoffset', String(1 - p));
+    el.setAttribute('opacity', p > 0 ? '1' : '0');
+    A3.texts[i].setAttribute('opacity', String(seg(lt, c2 + 0.2 + i * 0.2, c2 + 0.45 + i * 0.2)));
+  });
+  const pr = eInOut(seg(lt, c3, c3 + 0.7));
+  A3.roof.setAttribute('stroke-dashoffset', String(1 - pr)); A3.roof.setAttribute('opacity', pr > 0 ? '1' : '0');
+  const pb = eInOut(seg(lt, c3 + 0.25, c3 + 0.9));
+  const wob = 16 * Math.sin((lt - c3) * 4.2) * seg(lt, c3 + 0.9, c3 + 1.2); // 控制点被来回调
+  const cv = [[150, 232], [520, 214 + wob], [960, 204 - wob * 0.7], [1380, 196]];
+  A3.belt.setAttribute('d', `M${cv[0][0]} ${cv[0][1]} C ${cv[1][0]} ${cv[1][1]}, ${cv[2][0]} ${cv[2][1]}, ${cv[3][0]} ${cv[3][1]}`);
+  A3.belt.setAttribute('stroke-dashoffset', String(1 - pb)); A3.belt.setAttribute('opacity', pb > 0 ? '1' : '0');
+  A3.hull.setAttribute('points', pstr(cv)); A3.hull.setAttribute('opacity', String(0.8 * pb));
+  A3.cvs.forEach((el, i) => { el.setAttribute('x', cv[i][0] - 8); el.setAttribute('y', cv[i][1] - 8); el.setAttribute('opacity', String(seg(pb, i * 0.2, i * 0.2 + 0.2))); });
+  A3.trend.setAttribute('opacity', String(seg(lt, c3 + 0.3, c3 + 0.6)));
+}
+
+/* ---------- A4 两派建模:左边方盒推拉(体块法),右边拼接法(搭建法:先轮眉,再腰线,再补面) ---------- */
+const A4 = {};
+const LX = 172, LY = 716, BOX = { Lx: 560, Ly: 165, Lz: 230 };
+// 每个截面的目标形状:[底, 腰, 顶] 的 (x, y),以及顶部向内收多少
+const CAR = [
+  [[22, 22], [0, 92], [32, 118], 10], [[93, 0], [93, 97], [100, 128], 10], [[187, 0], [187, 101], [176, 139], 12],
+  [[280, 0], [280, 103], [262, 198], 30], [[373, 0], [373, 105], [372, 206], 30], [[467, 0], [467, 106], [456, 188], 30],
+  [[540, 24], [560, 100], [546, 134], 10],
+];
+const STG = [0, 0, 0, 2, 2, 2, 1]; // 每个截面属于哪一步:0 压低机盖,1 压低尾部,2 拉高车顶
+function latP(i, j, k, w) {
+  const t = w[STG[i]];
+  const x = lerp((i / 6) * BOX.Lx, CAR[i][j][0], t);
+  const y = lerp((j / 2) * BOX.Ly, CAR[i][j][1], t);
+  const inset = (j === 2 ? CAR[i][3] : j === 0 ? 6 : 0) * t;
+  const z = k ? BOX.Lz - inset : inset;
+  return [LX + x + z * 0.55, LY - y - z * 0.32];
+}
+const RX = 1100, RY = 800;
+const yb = (x) => 176 + 24 * (x / 620) + 14 * Math.sin((Math.PI * x) / 620); // 腰线
+const rp = (x, y) => [RX + x, RY - y];
+function buildA4() {
+  const svg = $('a4s');
+  const label = (parent, x, y, s, size, fill = '#fff', anchor = 'start') => { const el = mk('text', { x, y, 'text-anchor': anchor, 'font-size': size, 'font-weight': 900, fill }, parent); el.textContent = s; return el; };
+  A4.title = label(svg, 960, 104, 'SubD 建模 · 两派', 60, '#fff', 'middle');
+  const pill = (g, x, y, s) => { mk('rect', { x, y: y - 36, width: 136, height: 50, rx: 25, fill: 'rgba(209,141,95,0.14)', stroke: '#d18d5f', 'stroke-width': 2 }, g); label(g, x + 68, y, s, 30, '#e8b28a', 'middle'); };
+  // 左:方盒推拉
+  const gl = (A4.gl = mk('g', {}, svg));
+  mk('rect', { x: 90, y: 150, width: 840, height: 760, rx: 22, fill: 'rgba(23,30,34,0.72)', stroke: '#2a3438', 'stroke-width': 2 }, gl);
+  label(gl, 134, 240, '方盒推拉', 64);
+  pill(gl, 420, 232, '体块法');
+  A4.lines = []; A4.faces = []; A4.dots = [];
+  const line = (a, b, o, color, width) => A4.lines.push({ a, b, o, el: mk('line', { stroke: color, 'stroke-width': width, 'stroke-linecap': 'round' }, gl) });
+  for (let i = 0; i <= 6; i++) for (let j = 0; j <= 2; j++) {
+    if (i < 6) line([i, j, 1], [i + 1, j, 1], 0.45, '#a4673f', 1.6);
+    if (j < 2) line([i, j, 1], [i, j + 1, 1], 0.45, '#a4673f', 1.6);
+    line([i, j, 0], [i, j, 1], j === 2 || i === 6 ? 0.9 : 0.4, j === 2 || i === 6 ? '#e07a3c' : '#a4673f', j === 2 || i === 6 ? 2.2 : 1.6);
+  }
+  for (let i = 0; i < 6; i++) A4.faces.push({ i, pts: [[i, 2, 0], [i + 1, 2, 0], [i + 1, 2, 1], [i, 2, 1]], el: mk('polygon', { fill: 'rgba(232,178,138,0.16)' }, gl) });
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) A4.faces.push({ i, pts: [[i, j, 0], [i + 1, j, 0], [i + 1, j + 1, 0], [i, j + 1, 0]], el: mk('polygon', { fill: 'rgba(224,122,60,0.2)' }, gl) });
+  for (let i = 0; i <= 6; i++) for (let j = 0; j <= 2; j++) {
+    if (i < 6) line([i, j, 0], [i + 1, j, 0], 1, '#e07a3c', 2.6);
+    if (j < 2) line([i, j, 0], [i, j + 1, 0], 1, '#e07a3c', 2.6);
+    if (i < 6 && j === 2) line([i, 2, 1], [i + 1, 2, 1], 0.9, '#e07a3c', 2.2);
+  }
+  for (let i = 0; i <= 6; i++) for (let j = 0; j <= 2; j++) A4.dots.push({ p: [i, j, 0], el: mk('circle', { r: 5.5, fill: '#ffb37a' }, gl) });
+  A4.lwheels = [108, 452].map((x) => mk('circle', { cx: LX + x + 3, cy: LY - 18, r: 46, fill: '#11171a', stroke: '#d18d5f', 'stroke-width': 3 }, gl));
+  const arrow = (i, up, stage) => ({ i, up, stage, el: mk('path', { d: up ? 'M0 -22 L0 -70 M-11 -56 L0 -70 L11 -56' : 'M0 -70 L0 -22 M-11 -36 L0 -22 L11 -36', stroke: '#fff', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, gl) });
+  A4.arrows = [arrow(0, false, 0), arrow(1, false, 0), arrow(2, false, 0), arrow(6, false, 1), arrow(3, true, 2), arrow(4, true, 2), arrow(5, true, 2)];
+  A4.push = label(gl, 0, 0, '推', 44, '#fff', 'middle');
+  A4.pull = label(gl, 0, 0, '拉', 44, '#fff', 'middle');
+  // 右:拼接法
+  const gr = (A4.gr = mk('g', {}, svg));
+  mk('rect', { x: 990, y: 150, width: 840, height: 760, rx: 22, fill: 'rgba(23,30,34,0.72)', stroke: '#2a3438', 'stroke-width': 2 }, gr);
+  label(gr, 1034, 240, '拼接法', 64);
+  pill(gr, 1254, 232, '搭建法');
+  mk('line', { x1: RX - 40, y1: RY, x2: RX + 660, y2: RY, stroke: '#3a464c', 'stroke-width': 2 }, gr);
+  const quad = (list, pts, t, fill) => list.push({ t, el: mk('polygon', { points: pstr(pts.map((q) => rp(q[0], q[1]))), fill, stroke: '#e07a3c', 'stroke-width': 2, 'stroke-linejoin': 'round' }, gr) });
+  A4.fill = []; A4.arch = []; A4.belt = [];
+  const ring = (c, r, a) => [c + r * Math.cos(a), 62 + r * Math.sin(a)];
+  // 补面(最后出现):门板、前后翼子板、车头车尾、座舱
+  for (let col = 0; col < 4; col++) for (let row = 0; row < 3; row++) {
+    const x0 = 234 + col * 38, x1 = x0 + 38;
+    const y = (x, r) => lerp(22, yb(x), r / 3);
+    quad(A4.fill, [[x0, y(x0, row)], [x1, y(x1, row)], [x1, y(x1, row + 1)], [x0, y(x0, row + 1)]], (col + row) * 0.05, 'rgba(224,122,60,0.1)');
+  }
+  [130, 490].forEach((c, n) => {
+    for (let k = 0; k < 8; k++) {
+      const a0 = Math.PI - (k * Math.PI) / 8, a1 = Math.PI - ((k + 1) * Math.PI) / 8;
+      const p0 = ring(c, 104, a0), p1 = ring(c, 104, a1);
+      quad(A4.fill, [p0, p1, [p1[0], yb(p1[0])], [p0[0], yb(p0[0])]], 0.15 + n * 0.1 + k * 0.035, 'rgba(224,122,60,0.1)');
+    }
+  });
+  quad(A4.fill, [[10, 42], [26, 62], [26, yb(26)], [10, yb(10)]], 0.3, 'rgba(224,122,60,0.1)');
+  quad(A4.fill, [[594, 62], [612, 46], [612, yb(612)], [594, yb(594)]], 0.34, 'rgba(224,122,60,0.1)');
+  const yr = (x) => yb(x) + 24 + 100 * Math.pow(Math.sin((Math.PI * (x - 150)) / 370), 0.75);
+  for (let col = 0; col < 8; col++) for (let row = 0; row < 2; row++) {
+    const x0 = 150 + col * 46.25, x1 = x0 + 46.25;
+    const y = (x, r) => lerp(yb(x) + 24, yr(x), r / 2);
+    quad(A4.fill, [[x0, y(x0, row)], [x1, y(x1, row)], [x1, y(x1, row + 1)], [x0, y(x0, row + 1)]], 0.45 + col * 0.04, 'rgba(232,178,138,0.08)');
+  }
+  A4.rwheels = [130, 490].map((c) => mk('circle', { cx: RX + c, cy: RY - 62, r: 60, stroke: '#62757b', 'stroke-width': 2.5, fill: 'rgba(17,23,26,0.6)' }, gr));
+  // 第一步:轮眉(两圈四边面)
+  [130, 490].forEach((c, n) => {
+    for (let k = 0; k < 8; k++) {
+      const a0 = Math.PI - (k * Math.PI) / 8, a1 = Math.PI - ((k + 1) * Math.PI) / 8;
+      quad(A4.arch, [ring(c, 78, a0), ring(c, 78, a1), ring(c, 104, a1), ring(c, 104, a0)], n * 0.35 + k * 0.05, 'rgba(255,179,122,0.3)');
+    }
+  });
+  // 第二步:腰线(一条四边面带)
+  for (let k = 0; k < 16; k++) {
+    const x0 = 10 + (k * 602) / 16, x1 = 10 + ((k + 1) * 602) / 16;
+    quad(A4.belt, [[x0, yb(x0)], [x1, yb(x1)], [x1, yb(x1) + 24], [x0, yb(x0) + 24]], k * 0.04, 'rgba(255,179,122,0.3)');
+  }
+  A4.t3 = label(gr, RX + 130, RY + 62, '先做轮眉', 40, '#e8b28a', 'middle');
+  A4.t4 = label(gr, RX + 330, RY - 372, '再做腰线', 40, '#e8b28a', 'middle');
+  A4.lead = mk('line', { x1: RX + 330, y1: RY - 356, x2: RX + 330, y2: RY - yb(330) - 30, stroke: '#e8b28a', 'stroke-width': 2, 'stroke-dasharray': '5 7' }, gr);
+}
+function drawA4(lt, dur, cue) {
+  show($('a4'));
+  const [c0, c1, c2, c3, c4] = cue;
+  A4.title.setAttribute('opacity', String(eOutCubic(seg(lt, c0 - 0.1, c0 + 0.3))));
+  // 两个面板先后滑入(先暗着),讲到哪一派,哪一边亮起来
+  const inL = eOutCubic(seg(lt, c0 + 0.3, c0 + 0.8)), inR = eOutCubic(seg(lt, c0 + 0.6, c0 + 1.1));
+  A4.gl.setAttribute('opacity', String(inL * lerp(0.3, 1, seg(lt, c1 - 0.2, c1 + 0.1))));
+  A4.gr.setAttribute('opacity', String(inR * lerp(0.3, 1, seg(lt, c2 - 0.2, c2 + 0.1))));
+  A4.gl.setAttribute('transform', `translate(${((1 - inL) * -70).toFixed(1)} 0)`);
+  A4.gr.setAttribute('transform', `translate(${((1 - inR) * 70).toFixed(1)} 0)`);
+  // 左:方盒先一格格画出来 → 三步推拉
+  const w = [eInOut(seg(lt, c1 + 0.7, c1 + 1.3)), eInOut(seg(lt, c1 + 1.25, c1 + 1.8)), eInOut(seg(lt, c1 + 1.75, c1 + 2.4))];
+  const at = (q) => latP(q[0], q[1], q[2], w);
+  const vis = (i) => eOutCubic(seg(lt, c1 - 0.9 + i * 0.11, c1 - 0.5 + i * 0.11));
+  for (const e of A4.lines) {
+    const a = at(e.a), b = at(e.b);
+    e.el.setAttribute('x1', a[0].toFixed(1)); e.el.setAttribute('y1', a[1].toFixed(1)); e.el.setAttribute('x2', b[0].toFixed(1)); e.el.setAttribute('y2', b[1].toFixed(1));
+    e.el.setAttribute('opacity', (vis(Math.max(e.a[0], e.b[0])) * e.o).toFixed(3));
+  }
+  for (const f of A4.faces) { f.el.setAttribute('points', pstr(f.pts.map(at))); f.el.setAttribute('opacity', vis(f.i + 1).toFixed(3)); }
+  for (const d of A4.dots) { const q = at(d.p); d.el.setAttribute('cx', q[0].toFixed(1)); d.el.setAttribute('cy', q[1].toFixed(1)); d.el.setAttribute('opacity', vis(d.p[0]).toFixed(3)); }
+  A4.lwheels.forEach((el) => el.setAttribute('opacity', String(seg(lt, c1 + 2.3, c1 + 2.7))));
+  const win = [[c1 + 0.55, c1 + 1.4], [c1 + 1.1, c1 + 1.9], [c1 + 1.6, c1 + 2.5]];
+  for (const a of A4.arrows) {
+    const q = at([a.i, 2, 0]);
+    a.el.setAttribute('transform', `translate(${q[0].toFixed(1)} ${q[1].toFixed(1)})`);
+    a.el.setAttribute('opacity', Math.sin(Math.PI * seg(lt, win[a.stage][0], win[a.stage][1])).toFixed(3));
+  }
+  const q1 = at([1, 2, 0]), q4 = at([4, 2, 0]);
+  A4.push.setAttribute('x', q1[0] - 52); A4.push.setAttribute('y', q1[1] - 78); A4.push.setAttribute('opacity', Math.sin(Math.PI * seg(lt, win[0][0], win[1][1])).toFixed(3));
+  A4.pull.setAttribute('x', q4[0] + 56); A4.pull.setAttribute('y', q4[1] - 84); A4.pull.setAttribute('opacity', Math.sin(Math.PI * seg(lt, win[2][0], win[2][1] + 0.4)).toFixed(3));
+  // 右:先轮眉,再腰线,再补面
+  const popIn = (list, t0) => { for (const q of list) q.el.setAttribute('opacity', eOutCubic(seg(lt, t0 + q.t, t0 + q.t + 0.14)).toFixed(3)); };
+  popIn(A4.arch, c3);
+  popIn(A4.belt, c4);
+  popIn(A4.fill, c4 + 0.75);
+  A4.rwheels.forEach((el, i) => el.setAttribute('opacity', String(seg(lt, c3 - 0.15 + i * 0.3, c3 + 0.1 + i * 0.3))));
+  A4.t3.setAttribute('opacity', String(seg(lt, c3, c3 + 0.2)));
+  A4.t4.setAttribute('opacity', String(seg(lt, c4, c4 + 0.2)));
+  A4.lead.setAttribute('opacity', String(0.8 * seg(lt, c4, c4 + 0.2)));
+}
+
+/* ---------- 各镜头 ---------- */
+function locate(shot, lt) {
+  let lf = Math.max(0, Math.round(lt * 60));
+  for (let i = 0; i < shot.parts.length; i++) {
+    const p = shot.parts[i];
+    if (lf < p.frames || i === shot.parts.length - 1) return { clip: p.clip, f: p.from + Math.min(lf, p.frames - 1), part: i, lf, held: lf >= p.frames };
+    lf -= p.frames;
+  }
+}
+async function realShot(lt, shot, z) {
+  const dur = shot.end - shot.start;
+  const L = locate(shot, lt);
+  await drawShot(L.clip, L.f);
+  const camAt = (x) => {
+    const q = locate(shot, x);
+    const a = autoCam(CFG.clips[q.clip].rows, q.f, z, shot.biasY || 0);
+    const punch = 1 + 0.018 * (1 - eOutExpo(seg(x, 0, 0.6))); // 第五版:切镜时的"冲一下"收小,录屏段之间更平
+    const tail = shot.total / 60 < dur ? 0.03 * eInOut(seg(x, shot.total / 60, dur)) : 0; // 素材放完后缓慢推近,避免静帧
+    return camTransform(a.s * punch + tail, a.fx, a.fy);
+  };
+  const c = camAt(lt), p = camAt(Math.max(0, lt - 1 / 60));
+  const v = Math.hypot(c.tx - p.tx, c.ty - p.ty) + Math.abs(c.s - p.s) * 1100; // 运动模糊随镜头速度变化
+  applyCam(c, clamp(v * 0.2, 0, 7) + (1 - eOutExpo(seg(lt, 0, 0.3))) * 3, 1);
+  url(1);
+  const st = (shot.stickers || []).filter((s) => s.t <= lt).pop();
+  if (st) sticker(st.text, lt - st.t);
+  return { ...L, c, rows: CFG.clips[L.clip].rows };
+}
+const Z = { wide: [S0, S0 * 1.02, S0 * 1.085], calm: [S0, S0 * 1.015, S0 * 1.05] };
+const R = {
+  async A1(lt, shot) {
+    let i = 0;
+    for (let k = 0; k < shot.cards.length; k++) if (lt >= shot.cards[k].at) i = k;
+    const card = shot.cards[i];
+    const u = lt - card.at;
+    const dur = (i + 1 < shot.cards.length ? shot.cards[i + 1].at : shot.end - shot.start) - card.at;
+    if (i === 0) drawArt1(u);
+    else if (i === 1) drawArt2(u);
+    else {
+      const n = card.segs.length, sd = dur / n;
+      const k = Math.min(n - 1, Math.floor(u / sd));
+      const v = u - k * sd;
+      const meta = CFG.clips[card.segs[k].clip];
+      const img = await frameImg(card.segs[k].clip, Math.min(meta.frames - 1, card.segs[k].from + Math.round(v * 60)));
+      const ctx = show($('bgclip')).getContext('2d');
+      const r = img.width / 1440;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 60 * r, 185 * r, 1026 * r, 506.6 * r, 0, 0, VW, VH); // 只取三维视口中间的区域
+      $('bgclip').style.transform = `scale(${(1.07 - 0.07 * eOutExpo(seg(v, 0, 0.3))).toFixed(4)})`;
+      show($('scrim'));
+    }
+    bigText(card.html, card.size, card.y, u, dur);
+    if (u < 0.09) flash(0.2 * (1 - u / 0.09));
+  },
+  async A2(lt, shot) { drawA2(lt, shot.end - shot.start, shot.cue); },
+  async A3(lt, shot) { drawA3(lt, shot.end - shot.start, shot.cue); },
+  async A4(lt, shot) { drawA4(lt, shot.end - shot.start, shot.cue); },
+  // 网站登场:大字缩进网址栏,浏览器窗口放大出现,网址逐字打出
+  async B2(lt, shot) {
+    const L = locate(shot, lt);
+    await drawShot(L.clip, L.f);
+    const a = eOutExpo(seg(lt, 0.5, 1.35));
+    const push = eInOut(seg(lt, 1.7, shot.end - shot.start));
+    applyCam(camTransform(lerp(0.5, 1, a) * (1 + 0.1 * push)), (1 - a) * 18, clamp((lt - 0.45) * 5));
+    if (lt < 1.0) {
+      const el = setBig('所以，我做了<em>这个网站</em>', 150, 450);
+      const inn = eOutExpo(seg(lt, 0, 0.26));
+      const p = eInOut(seg(lt, 0.52, 1.0));
+      el.style.opacity = String(clamp(inn * 1.8) * (1 - p));
+      el.style.transform = `translate(-50%, -50%) translate(0, ${(-430 * p).toFixed(1)}px) scale(${((1.7 - 0.7 * inn) * lerp(1, 0.1, p)).toFixed(4)})`;
+      const blur = (1 - inn) * 24 + p * 9;
+      el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none';
+    }
+    if (lt < 0.09) flash(0.22 * (1 - lt / 0.09));
+    url(seg(lt, 1.0, 1.7));
+    const st = (shot.stickers || []).filter((s) => s.t <= lt).pop();
+    if (st) sticker(st.text, lt - st.t);
+  },
+  async B6(lt, shot) { const L = await realShot(lt, shot, Z.calm); tag(shot, L); },
+  async B4(lt, shot) { const L = await realShot(lt, shot, Z.wide); bubble(L.rows, L.f, L.c); tag(shot, L); },
+  async B7(lt, shot) { const L = await realShot(lt, shot, Z.wide); bubble(L.rows, L.f, L.c); tag(shot, L); },
+  async B8(lt, shot) { const L = await realShot(lt, shot, Z.calm); tag(shot, L); },
+  // 导出:镜头推近到「导出模型」按钮 → 按下 → 菜单展开时略拉远 → 推近到导出项 → 按下 → 拉回全景看下载提示
+  async B9(lt, shot) {
+    if (!shot.press || shot.press.length < 2) { await realShot(lt, shot, Z.calm); return; }
+    const L = locate(shot, lt);
+    await drawShot(L.clip, L.f);
+    const [p1, p2] = shot.press;
+    const mid = (p) => ({ fx: p.x + p.w / 2, fy: p.y + p.h / 2 });
+    const full = { s: S0, fx: 720, fy: 405 };
+    const menu = { s: S0 * 1.5, fx: mid(p2).fx, fy: mid(p2).fy + 110 };
+    const keys = [
+      { t: 0, ...full }, { t: Math.max(0.1, p1.t - 0.95), ...full },
+      { t: p1.t - 0.1, s: S0 * 2.15, ...mid(p1) }, { t: p1.t + 0.3, s: S0 * 2.15, ...mid(p1) },
+      { t: p1.t + 0.85, ...menu }, { t: p2.t - 0.5, ...menu },
+      { t: p2.t - 0.08, s: S0 * 1.95, ...mid(p2) }, { t: p2.t + 0.3, s: S0 * 1.95, ...mid(p2) },
+      { t: p2.t + 0.95, ...full },
+    ];
+    const camAt = (x, bump) => {
+      const k = keyCam(keys, x);
+      let s = k.s;
+      if (bump) for (const p of shot.press) s *= 1 - 0.035 * pressBump(x - p.t, p.hold); // 按下去:画面整体微微下沉再弹回
+      return camTransform(s, k.fx, k.fy);
+    };
+    const a = camAt(lt, false), b = camAt(Math.max(0, lt - 1 / 60), false);
+    const v = Math.hypot(a.tx - b.tx, a.ty - b.ty) + Math.abs(a.s - b.s) * 1100;
+    const c = camAt(lt, true);
+    applyCam(c, clamp(v * 0.045, 0, 2.6) + (1 - eOutExpo(seg(lt, 0, 0.22))) * 7, 1); // 推近时只带轻微模糊,保证按钮一路看得清
+    url(1);
+    if (lt < 0.07) flash(0.1 * (1 - lt / 0.07));
+    const st = (shot.stickers || []).filter((s) => s.t <= lt).pop();
+    if (st) sticker(st.text, lt - st.t);
+    for (const p of shot.press) {
+      const u = lt - p.t;
+      if (u < -0.04 || u > p.hold + 0.6) continue;
+      const down = eOutCubic(seg(u, 0, 0.06)), rel = eOutCubic(seg(u, p.hold + 0.02, p.hold + 0.55));
+      const grow = -5 * down + 34 * rel;
+      const el = show($('press'));
+      el.style.left = (c.tx + c.s * (WIN.x + p.x * K) - grow).toFixed(1) + 'px';
+      el.style.top = (c.ty + c.s * (WIN.y + WIN.bar + p.y * K) - grow).toFixed(1) + 'px';
+      el.style.width = (c.s * p.w * K + 2 * grow).toFixed(1) + 'px';
+      el.style.height = (c.s * p.h * K + 2 * grow).toFixed(1) + 'px';
+      el.style.borderRadius = (5 * c.s + Math.max(0, grow)).toFixed(1) + 'px';
+      el.style.opacity = String(seg(u, -0.04, 0.02) * (1 - rel));
+    }
+    const age = lt - shot.exportAt - 0.6;
+    if (age >= 0) {
+      const el = show($('exp'));
+      $('expfile').textContent = shot.file || '';
+      $('exptoast').textContent = shot.toast || '';
+      slam(el, age, '0 50%');
+    }
+  },
+  async B10(lt, shot) {
+    const L = locate(shot, lt);
+    await drawShot(L.clip, L.f);
+    const p = eInOut(seg(lt, 0, 0.95));
+    const s = lerp(S0, 0.58, p) * (1 - 0.012 * seg(lt, 0.95, shot.end - shot.start));
+    const cx = WIN.x + WIN.w / 2, cy = WIN.y + (WIN.h + WIN.bar) / 2;
+    const c = { s, tx: VW / 2 - s * cx, ty: lerp(VH / 2, 296, p) - s * cy };
+    const prev = eInOut(seg(lt - 1 / 60, 0, 0.95));
+    applyCam(c, clamp(Math.abs(p - prev) * 260, 0, 9), 1);
+    url(1);
+    show($('end'));
+    slam($('endh'), lt - 0.5, '50% 50%');
+    const a = eOutExpo(seg(lt, 0.85, 1.2));
+    $('endurl').style.opacity = String(clamp(a * 1.5));
+    $('endurl').style.transform = `translate(0, ${((1 - a) * 30).toFixed(1)}px) scale(${(1 + 0.03 * Math.max(0, Math.sin((lt - 1.5) * Math.PI * 2)) * (lt > 1.5 ? 1 : 0)).toFixed(4)})`;
+    const b = eOutExpo(seg(lt, 1.05, 1.4));
+    $('endsmall').style.opacity = String(clamp(b * 1.5));
+    $('endsmall').style.transform = `translate(${((1 - b) * 30).toFixed(1)}px, 0)`;
+  },
+};
+
+/* ---------- 第五版:开场四个镜头改由 src/intro/film.ts 绘制(打包成 intro.bundle.js),接缝改成匹配转场 ---------- */
+function introCfg() {
+  const o = {};
+  for (const s of CFG.shots) if (s.id[0] === 'A') o[s.id] = { start: s.start, end: s.end, cue: s.cue };
+  return o;
+}
+function drawIntroAt(t) {
+  const cv = show($('intro'));
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1.5, 0, 0, 1.5, 0, 0);
+  window.FormIntro.draw(ctx, t, introCfg());
+  cv.style.opacity = '1'; cv.style.transform = 'none'; cv.style.filter = 'none';
+  return cv;
+}
+for (const id of ['A1', 'A2', 'A3', 'A4']) R[id] = async (lt, shot) => { drawIntroAt(shot.start + lt); };
+// 网站登场。上一镜的最后一帧是拼接法刚拼好的整车:它朝网站视口里那台车的位置推过去并化开,
+// 浏览器窗口同时从略小处推近、淡入。两边朝同一个方向运动,没有白闪,也没有空一拍的纯字幕卡。
+R.B2 = async (lt, shot) => {
+  const L = locate(shot, lt);
+  await drawShot(L.clip, L.f);
+  const d = shot.end - shot.start;
+  const a = eOutCubic(seg(lt, 0, 0.95));
+  const push = eInOut(seg(lt, 1.6, d));
+  applyCam(camTransform(lerp(0.86, 1, a) * (1 + 0.05 * push)), (1 - eOutCubic(seg(lt, 0, 0.5))) * 9, eInOut(seg(lt, 0.04, 0.55)));
+  const o = 1 - eInOut(seg(lt, 0.08, 0.6));
+  if (o > 0.004) {
+    const cv = drawIntroAt(shot.start);
+    const p = eOutCubic(seg(lt, 0, 0.6));
+    cv.style.opacity = String(o);
+    cv.style.transformOrigin = '1410px 592px';
+    cv.style.transform = `translate(${(-647 * p).toFixed(1)}px, ${(-27 * p).toFixed(1)}px) scale(${(1 + 0.16 * p).toFixed(4)})`;
+    cv.style.filter = p > 0.05 ? `blur(${(6 * p).toFixed(1)}px)` : 'none';
+  }
+  if (lt < 1.3) {
+    const el = setBig('所以，我做了<em>这个网站</em>', 124, 250); // 大字放在上方,不挡住正在对位的那台车
+    const inn = eOutExpo(seg(lt, 0.05, 0.36));
+    const p = eInOut(seg(lt, 0.85, 1.3));
+    el.style.opacity = String(clamp(inn * 1.8) * (1 - p));
+    el.style.transform = `translate(-50%, -50%) translate(0, ${(-230 * p).toFixed(1)}px) scale(${((1.22 - 0.22 * inn) * lerp(1, 0.1, p)).toFixed(4)})`;
+    const blur = (1 - inn) * 12 + p * 9;
+    el.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none';
+  }
+  url(seg(lt, 1.3, 2.0));
+  const st = (shot.stickers || []).filter((s) => s.t <= lt).pop();
+  if (st) sticker(st.text, lt - st.t);
+};
+
+window.init = async (cfg) => {
+  CFG = cfg;
+  if (cfg.scale && cfg.scale !== 1) document.documentElement.style.zoom = String(cfg.scale);
+  buildArt();
+  buildA2();
+  buildA3();
+  buildA4();
+  await Promise.all(['900 220px "Noto Sans CJK SC"', '700 44px "Noto Sans CJK SC"', '500 44px "Noto Sans CJK SC"', '700 52px Inter', '500 15px Inter', '700 20px "Liberation Mono"'].map((f) => document.fonts.load(f, '汽车造型 SubD 0123456789')));
+  await document.fonts.ready;
+  return true;
+};
+window.seek = async (t) => {
+  const S = CFG.shots;
+  let shot = S[S.length - 1];
+  for (const s of S) if (t >= s.start && t < s.end) { shot = s; break; }
+  hideAll();
+  for (const id of ['a2', 'a3', 'a4', 'art']) { $(id).style.opacity = ''; $(id).style.translate = ''; }
+  await R[shot.id](t - shot.start, shot);
+  // 氛围光缓慢漂移;示意段之间不再硬切加白闪,而是整幅内容浮入、上移淡出
+  $('vig').style.display = 'none';
+  $('amb1').style.transform = `translate(${(70 * Math.sin(t * 0.33)).toFixed(1)}px, ${(46 * Math.cos(t * 0.27)).toFixed(1)}px)`;
+  $('amb2').style.transform = `translate(${(80 * Math.cos(t * 0.29)).toFixed(1)}px, ${(-40 * Math.sin(t * 0.23)).toFixed(1)}px)`;
+  if (false) {
+    const lt = t - shot.start, d = shot.end - shot.start;
+    const i = eOutCubic(seg(lt, 0, 0.5)), o = eInOut(seg(lt, d - 0.3, d));
+    for (const id of [shot.id.toLowerCase(), 'art']) { $(id).style.opacity = String(i * (1 - o)); $(id).style.translate = `0 ${((1 - i) * 28 - o * 20).toFixed(1)}px`; }
+  }
+  caption(t);
+  return shot.id;
+};
+</script>
+</body>
+</html>

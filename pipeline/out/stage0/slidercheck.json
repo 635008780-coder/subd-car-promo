@@ -1,0 +1,91 @@
+{
+ "slider": {
+  "label": "车长",
+  "selector": "input[type=\"range\"][aria-label=\"车长滑块\"]",
+  "min": 2700,
+  "max": 5600,
+  "step": 10,
+  "trackPx": 313,
+  "mmPerPx": 9.5
+ },
+ "frames": 173,
+ "seconds": 2.8833333333333333,
+ "startValue": 4475,
+ "dragRight": {
+  "frames": [
+   41,
+   83
+  ],
+  "valueFrom": 4475,
+  "valueTo": 4920,
+  "valueChanges": 30,
+  "lastValueChangeFrame": 78,
+  "modelUpdatesWhileMoving": 0,
+  "modelUpdatedAtFrame": 81,
+  "lagFrames": 3,
+  "measuredLength": 4920
+ },
+ "dragLeft": {
+  "frames": [
+   101,
+   137
+  ],
+  "valueFrom": 4920,
+  "valueTo": 4190,
+  "valueChanges": 29,
+  "lastValueChangeFrame": 134,
+  "modelUpdatesWhileMoving": 0,
+  "modelUpdatedAtFrame": 137,
+  "lagFrames": 3,
+  "measuredLength": 4190
+ },
+ "noteChanges": [
+  {
+   "f": 81,
+   "len": 4920
+  },
+  {
+   "f": 137,
+   "len": 4190
+  }
+ ],
+ "pendingFrames": 69,
+ "viewportChanged": [
+  true,
+  true
+ ],
+ "bubbleSample": {
+  "frame": 83,
+  "value": 4920,
+  "unit": "mm",
+  "inputRect": {
+   "v": "4920",
+   "x": 1496,
+   "y": 666,
+   "w": 53,
+   "h": 15
+  }
+ },
+ "maxFrameMs": 526,
+ "msPerFrame": 239,
+ "stills": [
+  {
+   "f": 40,
+   "t": 0.67,
+   "value": 4475,
+   "measuredLength": 4475
+  },
+  {
+   "f": 99,
+   "t": 1.65,
+   "value": 4920,
+   "measuredLength": 4920
+  },
+  {
+   "f": 172,
+   "t": 2.87,
+   "value": 4190,
+   "measuredLength": 4190
+  }
+ ]
+}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>封面 16:9 · 四款</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #11171a; }
+  body { font-family: "Noto Sans CJK SC", "Noto Sans SC", sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #c { position: absolute; inset: 0; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background-size: cover; background-position: 50% 50%; }
+  .shade { position: absolute; inset: 0; }
+  h1, h2 { margin: 0; font-weight: 900; line-height: 1.08; letter-spacing: .02em; text-shadow: 0 10px 50px rgba(0,0,0,.65); position: absolute; white-space: nowrap; }
+  em { font-style: normal; color: #e8b28a; }
+  .tag { position: absolute; padding: 10px 22px 12px; border-radius: 10px; background: rgba(9,13,15,.82); border: 1px solid rgba(255,255,255,.14); font-weight: 700; font-size: 30px; white-space: nowrap; }
+  .tag i { display: inline-block; width: 12px; height: 12px; margin-right: 12px; border-radius: 50%; background: #d18d5f; }
+  .pill { position: absolute; padding: 14px 34px 17px; border-radius: 999px; background: #d18d5f; color: #11171a; font: 700 40px/1 Inter, sans-serif; white-space: nowrap; }
+  .kick { position: absolute; font: 700 24px/1 "Liberation Mono", monospace; letter-spacing: .22em; color: #d18d5f; white-space: nowrap; }
+  svg { position: absolute; inset: 0; }
+  svg text { font-family: "Noto Sans CJK SC", sans-serif; font-weight: 900; }
+</style>
+</head>
+<body>
+<div id="c"></div>
+<script>
+  const U = (s) => `url('${s}')`; // 单引号:这段会放进双引号的 style 属性里
+  const V = {
+    // 1 斜切对比:左半光顺渲染,右半 SubD 控制笼
+    1: (c) => `
+      <div class="bg" style="background-image:${U(c.surface)};clip-path:polygon(0 0,1250px 0,690px 1080px,0 1080px)"></div>
+      <div class="bg" style="background-image:${U(c.cage)};clip-path:polygon(1250px 0,1920px 0,1920px 1080px,690px 1080px)"></div>
+      <div class="shade" style="background:linear-gradient(180deg,rgba(8,11,13,.82) 0,rgba(8,11,13,0) 34%,rgba(8,11,13,0) 62%,rgba(8,11,13,.9) 100%)"></div>
+      <svg viewBox="0 0 1920 1080"><line x1="1250" y1="0" x2="690" y2="1080" stroke="#e8b28a" stroke-width="5"/></svg>
+      <h1 style="left:92px;top:56px;font-size:196px">汽车造型</h1>
+      <h2 style="left:92px;bottom:70px;font-size:112px">第一版数据<em style="margin-left:36px">不用从零建</em></h2>
+      <div class="tag" style="left:92px;top:300px"><i></i>光顺渲染</div><div class="tag" style="right:92px;top:70px"><i></i>SubD 控制笼</div>`,
+    // 2 主视觉:深海蓝成品车铺满,左侧大字
+    2: (c) => `
+      <div class="bg" style="background-image:${U(c.blue)};background-size:128%;background-position:8% 46%"></div>
+      <div class="shade" style="background:linear-gradient(90deg,rgba(8,11,13,.94) 0,rgba(8,11,13,.72) 34%,rgba(8,11,13,0) 62%),linear-gradient(0deg,rgba(8,11,13,.85) 0,rgba(8,11,13,0) 30%)"></div>
+      <div class="kick" style="left:96px;top:104px">FORM · SUBDIVISION STUDIO</div>
+      <h1 style="left:92px;top:170px;font-size:190px">调参数</h1>
+      <h1 style="left:92px;top:390px;font-size:190px">出<em>第一版</em></h1>
+      <h2 style="left:96px;top:640px;font-size:76px">汽车造型 SubD 数据 · 浏览器里完成</h2>
+      <div class="pill" style="left:96px;bottom:92px">form-cc-studio.netlify.app</div>`,
+    // 3 三联:三种车型的控制笼
+    3: (c) => `
+      <div class="bg" style="background-image:${U(c.cage)};clip-path:polygon(0 0,700px 0,560px 1080px,0 1080px);background-size:1200px auto;background-repeat:no-repeat;background-position:-225px 200px"></div>
+      <div class="bg" style="background-image:${U(c.suv)};clip-path:polygon(700px 0,1360px 0,1220px 1080px,560px 1080px);background-size:1200px auto;background-repeat:no-repeat;background-position:360px 200px"></div>
+      <div class="bg" style="background-image:${U(c.micro)};clip-path:polygon(1360px 0,1920px 0,1920px 1080px,1220px 1080px);background-size:1200px auto;background-repeat:no-repeat;background-position:1005px 200px"></div>
+      <div class="shade" style="background:linear-gradient(180deg,#11171a 0,#11171a 20%,rgba(17,23,26,0) 40%,rgba(17,23,26,0) 62%,#11171a 82%,#11171a 100%)"></div>
+      <svg viewBox="0 0 1920 1080"><line x1="700" y1="0" x2="560" y2="1080" stroke="#e8b28a" stroke-width="4"/><line x1="1360" y1="0" x2="1220" y2="1080" stroke="#e8b28a" stroke-width="4"/></svg>
+      <h1 style="left:0;right:0;top:60px;text-align:center;font-size:170px"><em>8 个</em>标准车型</h1>
+      <h2 style="left:0;right:0;bottom:76px;text-align:center;font-size:92px">选一个 · 调参数 · 导出 <em>SubD</em></h2>
+      <div class="tag" style="left:70px;top:330px"><i></i>轿车</div><div class="tag" style="left:800px;top:330px"><i></i>SUV</div><div class="tag" style="right:70px;top:330px"><i></i>微型车</div>`,
+    // 4 蓝图:侧视控制笼 + 尺寸线(尺寸线位置按真实车长、轴距换算)
+    4: (c) => { const d = c.dims, y1 = d.yg + 78, y2 = d.yg + 168; const dim = (a, b, y, t) => `<path d="M${a} ${y - 22}V${y + 22}M${b} ${y - 22}V${y + 22}M${a} ${y}H${b}M${a} ${y}l26 -13M${a} ${y}l26 13M${b} ${y}l-26 -13M${b} ${y}l-26 13" stroke="#e8b28a" stroke-width="3.5" fill="none"/><rect x="${(a + b) / 2 - 80}" y="${y - 30}" width="160" height="60" fill="#0b1012"/><text x="${(a + b) / 2}" y="${y + 17}" text-anchor="middle" font-size="46" fill="#e8b28a">${t}</text>`; return `
+      <div class="bg" style="background-image:${U(c.side)}"></div>
+      <div class="shade" style="background:linear-gradient(180deg,rgba(8,11,13,.92) 0,rgba(8,11,13,0) 30%,rgba(8,11,13,0) 66%,rgba(8,11,13,.9) 84%),linear-gradient(rgba(159,175,177,.06) 1px,transparent 1px) 0 0/100% 60px,linear-gradient(90deg,rgba(159,175,177,.06) 1px,transparent 1px) 0 0/60px 100%"></div>
+      <svg viewBox="0 0 1920 1080">${dim(d.xf, d.xr, y1, '轴距')}${dim(d.x0, d.x1, y2, '车长')}</svg>
+      <div class="kick" style="left:0;right:0;top:54px;text-align:center">SUBD · 参数化车身</div>
+      <h1 style="left:0;right:0;top:96px;text-align:center;font-size:150px">输入尺寸,<em>车身就出来</em></h1>`; },
+  };
+  window.init = async (cfg) => {
+    const load = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = ok; i.onerror = no; i.src = src; });
+    await Promise.all(['surface', 'cage', 'blue', 'side', 'suv', 'micro'].map((k) => load(cfg[k])));
+    document.getElementById('c').innerHTML = V[cfg.v](cfg);
+    await Promise.all(['900 190px "Noto Sans CJK SC"', '700 40px Inter', '700 24px "Liberation Mono"'].map((f) => document.fonts.load(f, '汽车造型调参数 SubD 8')));
+    await document.fonts.ready;
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return true;
+  };
+</script>
+</body>
+</html>

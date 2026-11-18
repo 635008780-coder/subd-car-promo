@@ -1,0 +1,70 @@
+{
+ "generatedAt": "2026-11-15T12:21:19.692Z",
+ "method": "Playwright clock(首选方案):接管 Date / performance.now / setTimeout / requestAnimationFrame,每帧推进一次 rAF(页面时间 16 ms)后截图",
+ "raw": {
+  "file": "raw/T0.mp4",
+  "frames": 120,
+  "seconds": 2,
+  "msPerFrame": 361,
+  "dragMs": 458,
+  "idleMs": 145,
+  "bytes": 1603599,
+  "viewport": "1600×900 @1x"
+ },
+ "determinism": {
+  "compared": 120,
+  "identical": 120,
+  "differing": [],
+  "movingFrames": 116,
+  "psnr": null,
+  "phase": [
+   8,
+   8
+  ]
+ },
+ "hiDpi": {
+  "dsf": 2,
+  "frames": 45,
+  "dragMs": 644,
+  "idleMs": 130,
+  "bytes": 308943
+ },
+ "compose": {
+  "msPerFrame": 449,
+  "page": "pipeline/timeline/stage0_test.html"
+ },
+ "output": {
+  "file": "output/stage0_test.mp4",
+  "bytes": 1488197,
+  "duration": 2,
+  "video": {
+   "codec": "h264",
+   "profile": "High",
+   "pix_fmt": "yuv420p",
+   "size": "1920×1080",
+   "fps": "60/1",
+   "frames": 120,
+   "color": "bt709"
+  },
+  "audio": {
+   "codec": "aac",
+   "profile": "LC",
+   "sample_rate": 48000,
+   "channels": 2
+  }
+ },
+ "stills": {
+  "test": [
+   0.15,
+   0.9,
+   1.85
+  ],
+  "raw": [
+   0.3333333333333333,
+   1.0333333333333334,
+   1.8666666666666667
+  ]
+ },
+ "webClipBytes": 1488197,
+ "seconds": 183
+}

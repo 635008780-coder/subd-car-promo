@@ -1,0 +1,3 @@
+# 录制与渲染的大体积中间文件(帧序列、临时音频)
+.work/
+pipeline/timeline/intro.bundle.js

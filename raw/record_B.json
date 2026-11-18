@@ -1,0 +1,24 @@
+{
+ "which": "B",
+ "minutes": 10.7,
+ "clips": [
+  {
+   "name": "R6",
+   "frames": 753,
+   "seconds": 12.55,
+   "msPerFrame": 307
+  },
+  {
+   "name": "R7",
+   "frames": 504,
+   "seconds": 8.4,
+   "msPerFrame": 388
+  },
+  {
+   "name": "R8",
+   "frames": 670,
+   "seconds": 11.17,
+   "msPerFrame": 260
+  }
+ ]
+}
